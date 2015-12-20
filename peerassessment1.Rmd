@@ -1,0 +1,110 @@
+---
+title: "peer assessment 1"
+author: "riv"
+date: "Sunday, December 20, 2015"
+output: html_document
+---
+
+Loading and preprocessing the data
+
+Show any code that is needed to load the data (i.e. read.csv())
+
+Process/transform the data (if necessary) into a format suitable for your analysis
+
+First we need to download the zip file and store it in local environment
+for this peer assessment /project2 steps count
+
+```{r}
+setwd("~/R/working directory course")
+unzip("repdata-data-activity.zip")
+```
+
+
+Now we have to read the csv file that was unzipped, we call the table in R "act1"
+
+```{r}
+act1 <- read.csv("activity.csv")
+```
+
+What is mean total number of steps taken per day?
+
+For this part of the assignment, we omitted the missing values inside the dataset.
+
+We calculated the total number of steps taken per day.
+
+We made a histogram of the total number of steps taken each day.
+
+And we calculated and reported the mean and median of the total number of steps taken per day.
+
+```{r}
+library(dplyr)
+act2 <- na.omit(act1)
+stepsaday = group_by(act2, date)
+stepsaday = summarise(stepsaday, 
+                       sumstep = sum(steps))
+hist(stepsaday$sumstep, xlab="number of steps per day", ylab="number of days", main = "Histogram of the steps per day")
+mean(stepsaday$sumstep)
+median(stepsaday$sumstep)
+```
+So far the first part of the assessment.
+The second part:
+
+What is the average daily activity pattern?
+
+We made a time series plot of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis).
+
+From the graph and the added calculation, we can see that 5-minute interval "835" (8h35-8h40 AM), on average across all the days in the dataset, contains the maximum number of steps (circa 206 steps). 
+```{r}
+
+stepintervals = group_by(act2, interval)
+stepintervals = summarise(stepintervals, 
+                       avg = mean(steps))
+library(ggplot2)
+qplot(interval, avg, data=stepintervals, geom="line", main="number of steps during the day",
+   xlab=("time interval"), ylab=("average number of steps"))
+print(subset(stepintervals, avg==max(stepintervals$avg)))
+```
+So far the second part of the assessment.
+The third part:
+
+Imputing missing values
+
+There are a number of days/intervals where there are missing values (coded as NA). The presence of missing days may introduce bias into some calculations or summaries of the data. 
+
+We calculated and reported the total number of missing values in the dataset, it appears that if data is missing, then the data of the whole day is missing.
+More days in November are missing than days in October.
+
+As it is not clear how to fill the data of the missing days, we take the values of the mean for that 5-minute interval.
+
+We created a new dataset that is equal to the original dataset but with the missing data filled in as explained
+
+We made a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day. The values differ from the estimates from the first part of the assignment in the sense that median is now the same as the mean. This can be explained by adding a lot of avarage values. The mean has not changed, which was to be expected. The impact of imputing missing data on the estimates of the total daily number of steps is very limited.
+
+```{r}
+
+act3 <- subset(act1, is.na(steps))
+act3$instance = 1
+norecords = group_by(act3, date)
+norecords = summarise(norecords, 
+                       number=sum(instance))
+norecords$day <- weekdays(as.Date(norecords$date))
+print(norecords)
+
+act4 <- merge(act3, stepintervals, by= "interval")
+
+act4$step <- act4$avg
+act2$step <- act2$steps
+act4 <- act4[c("interval","date","step")]
+act2 <- act2[c("interval","date","step")]
+act5 <- rbind(act4,act2)
+
+stepsaday = group_by(act5, date)
+stepsaday = summarise(stepsaday, 
+                       sumstep = sum(step))
+hist(stepsaday$sumstep, xlab="number of steps per day", ylab="number of days", main = "Revised histogram of the steps per day")
+mean(stepsaday$sumstep)
+median(stepsaday$sumstep)
+
+
+```
+This concludes part 3; I did not have time for part 4 :()
